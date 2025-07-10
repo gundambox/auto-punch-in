@@ -1,3 +1,4 @@
 .venv/
 .env
-msedgedriver
+skip_dates.txt
+log.txt
