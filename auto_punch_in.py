@@ -7,7 +7,6 @@ from typing import Dict
 
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -55,13 +54,19 @@ def skip_execution():
         logging.error("skip day check fatal error: %s", str(e))
         return False
 
-def get_webdriver(service, driver_type):
+def get_webdriver(driver_type):
     if driver_type == 'chrome':
-        return webdriver.Chrome(service=service, options=webdriver.ChromeOptions())
+        from webdriver_manager.chrome import ChromeDriverManager
+        from selenium.webdriver.chrome.service import Service
+        return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=webdriver.ChromeOptions())
     elif driver_type == 'firefox':
-        return webdriver.Firefox(service=service, options=webdriver.FirefoxOptions())
+        from webdriver_manager.firefox import GeckoDriverManager
+        from selenium.webdriver.firefox.service import Service
+        return webdriver.Firefox(service=Service(GeckoDriverManager().install()), options=webdriver.FirefoxOptions())
     elif driver_type == 'edge':
-        return webdriver.Edge(service=service, options=webdriver.EdgeOptions())
+        from webdriver_manager.microsoft import EdgeChromiumDriverManager
+        from selenium.webdriver.edge.service import Service
+        return webdriver.Edge(service=Service(EdgeChromiumDriverManager().install()), options=webdriver.EdgeOptions())
     else:
         raise ValueError("Invalid driver type: %s" % driver_type)
 
@@ -73,12 +78,9 @@ def try_punch(args: Dict) -> None:
         # google chrome driver (如果 chrome 更新可能會失效)
         driver_name = os.getenv('DRIVER_NAME')
         driver_type = os.getenv('DRIVER_TYPE')
-        driver_path = os.path.join(ROOT_PATH, driver_name)
-        # 建立 Service 物件來指定 WebDriver 的路徑
-        service = Service(driver_path)
 
         # 建立 ChromeOptions 物件
-        driver = get_webdriver(service, driver_type)
+        driver = get_webdriver(driver_type)
 
         driver.get(TARGET_URL)
         try:
@@ -106,7 +108,7 @@ def try_punch(args: Dict) -> None:
             elif args.mode == "check_out":
                 submit_button = driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-warning.pull-left')
                 logging.info("check out submit")
-                
+
             if not args.dry_run:
                 submit_button.click()
             else:
